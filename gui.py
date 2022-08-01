@@ -3,10 +3,13 @@
 from re import I
 import sys
 import threading
+from unittest import result
 import yaml
 import tkinter as tk
+import os
 from os import getenv
 from os.path import abspath
+from datetime import datetime
 from tkinter import messagebox
 from typing import Callable, Dict
 
@@ -69,12 +72,15 @@ class Application(tk.Frame):
     board: chess.Board
     rotate = False
     mode = SELF_PLAY
+    move_count = 0
+    pgn_br_count = 0
 
     def __init__(self) -> None:
         self.master = tk.Tk()
         super().__init__(self.master)
         self.load_resources()
         self.load_config()
+        self.save_pgn()
         self.master.title(self.config['window_title'])
         self.master.resizable(False, False)
         self.pack()
@@ -87,6 +93,37 @@ class Application(tk.Frame):
                 self.config = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+
+    def save_pgn(self, move_str=""):
+        if move_str == "":
+            # new file
+            self.pgn_file_name = "./CC-{} vs {}-_手胜.pgn".format(
+                self.config['pgn_red_name'],
+                self.config['pgn_black_name'])
+            if os.path.exists(self.pgn_file_name):
+                os.remove(self.pgn_file_name)
+            f = open(self.pgn_file_name, "w")
+            f.write("[Game \"{}\"]\n".format(self.config['pgn_game']))
+            f.write("[Event \"{}\"]\n".format(self.config['pgn_event']))
+            f.write("[Site \"{}\"]\n".format(self.config['pgn_site']))
+            now = datetime.now()
+            date_time_str = now.strftime("%Y.%m.%d")
+            f.write("[Date \"{}\"]\n".format(date_time_str))
+            f.write("[Round \"{}\"]\n".format(self.config['pgn_round']))
+            f.write("[Red \"{}\"]\n".format(self.config['pgn_red_name']))
+            f.write("[RedElo \"{}\"]\n".format(self.config['pgn_red_elo']))
+            f.write("[Black \"{}\"]\n".format(self.config['pgn_black_name']))
+            f.write("[BlackElo \"{}\"]\n".format(self.config['pgn_black_elo']))
+            f.write("[Result \"{}\"]\n".format("-:-"))
+            f.write("[ECCO \"{}\"]\n".format(self.config['pgn_ecco']))
+            f.write("[Opening \"{}\"]\n".format(self.config['pgn_opening']))
+            f.write("[Variation \"{}\"]\n".format(self.config['pgn_variation']))
+            f.write("[FEN \"{}\"]\n".format(self.config['pgn_fen']))
+            f.write("\n")
+            f.close()
+            return
+        else:
+            pass
 
     def load_resources(self) -> None:
         self.resources = {}
