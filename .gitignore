@@ -1,0 +1,7 @@
+.envrc
+__pycache__
+.direnv
+.vscode
+test.py
+.DS_Store
+moves_table
