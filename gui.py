@@ -100,8 +100,6 @@ class Application(tk.Frame):
             self.pgn_file_name = "./CC-{} vs {}-_手胜.pgn".format(
                 self.config['pgn_red_name'],
                 self.config['pgn_black_name'])
-            if os.path.exists(self.pgn_file_name):
-                os.remove(self.pgn_file_name)
             f = open(self.pgn_file_name, "w")
             f.write("[Game \"{}\"]\n".format(self.config['pgn_game']))
             f.write("[Event \"{}\"]\n".format(self.config['pgn_event']))
@@ -123,7 +121,16 @@ class Application(tk.Frame):
             f.close()
             return
         else:
-            pass
+            if self.pgn_br_count < 1:
+                f = open(self.pgn_file_name, "a")
+                f.write("{:.0f}. {}, ".format(self.move_count / 2 + 1, move_str))
+                f.close
+                self.pgn_br_count += 1
+            else:
+                f = open(self.pgn_file_name, "a")
+                f.write("{}\n".format(move_str))
+                f.close
+                self.pgn_br_count = 0
 
     def load_resources(self) -> None:
         self.resources = {}
@@ -234,7 +241,9 @@ class Application(tk.Frame):
             print("红方: " + self.board.chinese_move(move, full_width=True))
         else:
             print("黑方: " + self.board.chinese_move(move, full_width=True))
+        self.save_pgn(self.board.chinese_move(move, full_width=True))
         self.board.push(move)
+        self.move_count += 1
         self.select_square = None
         self.update_canvas()
         if self.board.is_checkmate():
