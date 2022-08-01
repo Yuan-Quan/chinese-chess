@@ -1262,6 +1262,9 @@ class Board(BaseBoard):
         piece_type = wxf_move[0]
         if self.turn == RED:
             piece_type = piece_type.upper()
+            build.insert(0, "红方: ")
+        else:
+            build.insert(0, "黑方: ")
         build.append(PIECES_NAMES[piece_type])
 
         if wxf_move[1] in "+-abced":
