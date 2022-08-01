@@ -124,12 +124,12 @@ class Application(tk.Frame):
             if self.pgn_br_count < 1:
                 f = open(self.pgn_file_name, "a")
                 f.write("{:.0f}. {}, ".format(self.move_count / 2 + 1, move_str))
-                f.close
+                f.close()
                 self.pgn_br_count += 1
             else:
                 f = open(self.pgn_file_name, "a")
                 f.write("{}\n".format(move_str))
-                f.close
+                f.close()
                 self.pgn_br_count = 0
 
     def load_resources(self) -> None:
