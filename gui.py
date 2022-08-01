@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from re import I
 import sys
 import threading
 import tkinter as tk
@@ -183,7 +184,10 @@ class Application(tk.Frame):
                     self.computer_move()
 
     def push(self, move: chess.Move):
-        print(self.board.chinese_move(move, full_width=True))
+        if self.board.turn == chess.RED:
+            print("红方: " + self.board.chinese_move(move, full_width=True))
+        else:
+            print("黑方: " + self.board.chinese_move(move, full_width=True))
         self.board.push(move)
         self.select_square = None
         self.update_canvas()
