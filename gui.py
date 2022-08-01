@@ -3,6 +3,7 @@
 from re import I
 import sys
 import threading
+import yaml
 import tkinter as tk
 from os import getenv
 from os.path import abspath
@@ -73,11 +74,19 @@ class Application(tk.Frame):
         self.master = tk.Tk()
         super().__init__(self.master)
         self.load_resources()
-        self.master.title("中国象棋")
+        self.load_config()
+        self.master.title(self.config['window_title'])
         self.master.resizable(False, False)
         self.pack()
         self.create_widgets()
         self.reset()
+
+    def load_config(self) -> None:
+        with open("config.yaml", "r") as stream:
+            try:
+                self.config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
 
     def load_resources(self) -> None:
         self.resources = {}
