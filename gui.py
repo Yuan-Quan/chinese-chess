@@ -139,7 +139,7 @@ class Application(tk.Frame):
             self.pgn_file_name = "./CC-{} vs {}-_手胜.pgn".format(
                 self.config['pgn_red_name'],
                 self.config['pgn_black_name'])
-            f = open(self.pgn_file_name, "w")
+            f = open(self.pgn_file_name, "w", encoding='gb2312')
             f.write("[Game \"{}\"]\n".format(self.config['pgn_game']))
             f.write("[Event \"{}\"]\n".format(self.config['pgn_event']))
             f.write("[Site \"{}\"]\n".format(self.config['pgn_site']))
@@ -162,13 +162,13 @@ class Application(tk.Frame):
             return
         else:
             if self.pgn_br_count < 1:
-                f = open(self.pgn_file_name, "a")
+                f = open(self.pgn_file_name, "a", encoding='gb2312')
                 f.write("{:.0f}.  {}    ".format(
                     self.move_count / 2 + 1, move_str))
                 f.close()
                 self.pgn_br_count += 1
             else:
-                f = open(self.pgn_file_name, "a")
+                f = open(self.pgn_file_name, "a", encoding='gb2312')
                 f.write("{} \n".format(move_str))
                 f.close()
                 self.pgn_br_count = 0
