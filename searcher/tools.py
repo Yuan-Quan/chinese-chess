@@ -3,7 +3,7 @@ import re
 import time
 import sys
 
-import elephantfish
+from searcher import elephantfish
 
 ################################################################################
 # This module contains functions used by test.py and xboard.py.
@@ -16,12 +16,33 @@ WHITE, BLACK = range(2)
 
 FEN_INITIAL = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1'
 
+
+class global_var:
+    cir_num = 0
+    last_board = FEN_INITIAL
+    last_last_board = FEN_INITIAL
+
+
 def search(searcher, pos, secs, history=()):
     """ This used to be in the Searcher class """
+    secs = 3
     start = time.time()
+    depth, move, score = 0, 0, 0
     for depth, move, score in searcher.search(pos, history):
         if time.time() - start > secs:
             break
+    # print('secs', secs)
+    # print('耗时：', time.time() - start)
+
+    if global_var.last_last_board == pos.board:
+        global_var.cir_num += 1
+    else:
+        global_var.cir_num = 0
+    global_var.last_last_board = global_var.last_board
+    global_var.last_board = pos.board
+
+    print('score', score, 'depth', depth, 'secs', secs, 'cir_num', global_var.cir_num, '耗时：%.3fs' % (time.time() - start))
+
     return move, score, depth
 
 
@@ -37,20 +58,24 @@ def gen_legal_moves(pos):
         if not can_kill_king(pos1):
             yield move, pos1
 
+
 def can_kill_king(pos):
     # If we just checked for opponent moves capturing the king, we would miss
     # captures in case of illegal castling.
     return any(pos.value(m) >= elephantfish.MATE_LOWER for m in pos.gen_moves())
 
+
 def mrender(pos, m):
     # Sunfish always assumes promotion to queen
     p = 'q' if elephantfish.A9 <= m[1] <= elephantfish.I9 and pos.board[m[0]] == 'P' else ''
-    m = m if get_color(pos) == WHITE else (254-m[0], 254-m[1])
+    m = m if get_color(pos) == WHITE else (254 - m[0], 254 - m[1])
     return elephantfish.render(m[0]) + elephantfish.render(m[1]) + p
+
 
 def mparse(color, move):
     m = (elephantfish.parse(move[0:2]), elephantfish.parse(move[2:4]))
-    return m if color == WHITE else (254-m[0], 254-m[1])
+    return m if color == WHITE else (254 - m[0], 254 - m[1])
+
 
 ################################################################################
 # Parse and Render positions
@@ -60,19 +85,21 @@ def get_color(pos):
     ''' A slightly hacky way to to get the color from a elephantfish position '''
     return BLACK if pos.board.startswith('\n') else WHITE
 
+
 def parseFEN(fen):
     """ Parses a string in Forsyth-Edwards Notation into a Position """
     board, color, _, __, ___, ____ = fen.split()
-    board = re.sub(r'\d', (lambda m: '.'*int(m.group(0))), board)
-    board = list((16*3 + 3)*' ' + '       '.join(board.split('/')) + (16*3 + 4)*' ')
-    board[15::16] = ['\n']*16
-    #if color == 'w': board[::10] = ['\n']*12
-    #if color == 'b': board[9::10] = ['\n']*12
-    board = ''.join(board)
-    score = sum(elephantfish.pst[p][i] for i,p in enumerate(board) if p.isupper())
-    score -= sum(elephantfish.pst[p.upper()][254-i] for i,p in enumerate(board) if p.islower())
+    board = re.sub(r'\d', (lambda m: '.' * int(m.group(0))), board)
+    board = list((16 * 3 + 3) * ' ' + '       '.join(board.split('/')) + (16 * 3 + 4) * ' ')
+    board[15::16] = ['\n'] * 16
+    # if color == 'w': board[::10] = ['\n']*12
+    # if color == 'b': board[9::10] = ['\n']*12
+    board = ''.join(board)  # 字符串转为真实棋盘
+    score = sum(elephantfish.pst[p][i] for i, p in enumerate(board) if p.isupper())  # 计算大写字符即红方的子力价值
+    score -= sum(elephantfish.pst[p.upper()][254 - i] for i, p in enumerate(board) if p.islower())  # 计算小写字符即黑方的子力价值
     pos = elephantfish.Position(board, score)
     return pos if color == 'w' else pos.rotate()
+
 
 def renderFEN(pos, half_move_clock=0, full_move_clock=1):
     color = 'wb'[get_color(pos)]
@@ -84,6 +111,7 @@ def renderFEN(pos, half_move_clock=0, full_move_clock=1):
     ep = '-'
     clock = '{} {}'.format(half_move_clock, full_move_clock)
     return ' '.join((board, color, castling, ep, clock))
+
 
 ################################################################################
 # Pretty print
@@ -102,15 +130,16 @@ def pv(searcher, pos, include_scores=True, include_loop=False):
         if move is None or can_kill_king(pos.move(move)):
             break
         res.append(mrender(pos, move))
-        pos, color = pos.move(move), 1-color
+        pos, color = pos.move(move), 1 - color
         if pos in seen_pos:
             if include_loop:
                 res.append('loop')
             break
         seen_pos.add(pos)
         if include_scores:
-            res.append(str(pos.score if color==origc else -pos.score))
+            res.append(str(pos.score if color == origc else -pos.score))
     return ' '.join(res)
+
 
 ################################################################################
 # Bulk move generation
@@ -122,6 +151,7 @@ def expand_position(pos):
     for _, pos1 in gen_legal_moves(pos):
         yield expand_position(pos1)
 
+
 def collect_tree_depth(tree, depth):
     ''' Yields positions exactly at depth '''
     root = next(tree)
@@ -129,8 +159,9 @@ def collect_tree_depth(tree, depth):
         yield root
     else:
         for subtree in tree:
-            for pos in collect_tree_depth(subtree, depth-1):
+            for pos in collect_tree_depth(subtree, depth - 1):
                 yield pos
+
 
 def flatten_tree(tree, depth):
     ''' Yields positions exactly at less than depth '''
@@ -138,8 +169,9 @@ def flatten_tree(tree, depth):
         return
     yield next(tree)
     for subtree in tree:
-        for pos in flatten_tree(subtree, depth-1):
+        for pos in flatten_tree(subtree, depth - 1):
             yield pos
+
 
 ################################################################################
 # Non chess related tools
@@ -149,10 +181,12 @@ def flatten_tree(tree, depth):
 class Unbuffered(object):
     def __init__(self, stream):
         self.stream = stream
+
     def write(self, data):
         self.stream.write(data)
         self.stream.flush()
         sys.stderr.write(data)
         sys.stderr.flush()
+
     def __getattr__(self, attr):
         return getattr(self.stream, attr)

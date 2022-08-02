@@ -1,4 +1,5 @@
 window_title: "中国象棋 - 北京科技大学"
+think_time: 30
 pgn_game: "Chinese Chess"
 pgn_event: "null"
 pgn_site: "null"

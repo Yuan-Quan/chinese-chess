@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-__author__ = "毛亚琛"
-__email__ = "maoyachen55@gmail.com"
-
 import dataclasses
 import gzip
 import pathlib
@@ -14,7 +11,6 @@ from typing import (Dict, Generic, Iterable, Iterator, List, Optional, Tuple,
 Color = bool
 COLORS = [RED, BLACK] = [True, False]
 COLOR_NAMES = ["black", "red"]
-
 
 PieceType = int
 PIECE_TYPES = [PAWN, CANNON, ROOK, KNIGHT, BISHOP, ADVISOR, KING] = range(1, 8)
@@ -96,7 +92,6 @@ def square_mirror(square: Square) -> Square:
 
 
 SQUARES_180 = [square_mirror(sq) for sq in SQUARES]
-
 
 Bitboard = int
 BB_EMPTY = 0
@@ -388,7 +383,7 @@ def _bishop_attacks() -> List[Bitboard]:
 def _king_attacks() -> List[Bitboard]:
     attacks = []
     for square in SQUARES:
-        if not(BB_SQUARES[square] & BB_IN_PALACE):
+        if not (BB_SQUARES[square] & BB_IN_PALACE):
             attacks.append(BB_EMPTY)
             continue
         attacks.append(_step_attacks(square, [-16, 16, 1, -1]) & BB_IN_PALACE)
@@ -398,7 +393,7 @@ def _king_attacks() -> List[Bitboard]:
 def _advisor_attacks() -> List[Bitboard]:
     attacks = []
     for square in SQUARES:
-        if not(BB_SQUARES[square] & BB_SQUARES_ADVISOR):
+        if not (BB_SQUARES[square] & BB_SQUARES_ADVISOR):
             attacks.append(BB_EMPTY)
             continue
         attacks.append(_step_attacks(square, [15, 17, -15, -17]) & BB_IN_PALACE)
@@ -478,9 +473,7 @@ except:
 
 @dataclasses.dataclass
 class Piece:
-
     piece_type: PieceType
-
     color: Color
 
     def symbol(self) -> str:
@@ -508,9 +501,7 @@ class Piece:
 
 @dataclasses.dataclass(unsafe_hash=True)
 class Move:
-
     from_square: Square
-
     to_square: Square
 
     def iccs(self) -> str:
@@ -594,13 +585,13 @@ class BaseBoard:
             self._set_board_fen(board_fen)
 
     def _reset_board(self) -> None:
-        self.pawns = BB_RED_PAWNS | BB_BLACK_PAWNS
-        self.knights = BB_B0 | BB_H0 | BB_B9 | BB_H9
-        self.bishops = BB_C0 | BB_G0 | BB_C9 | BB_G9
-        self.rooks = BB_CORNERS
-        self.cannons = BB_B2 | BB_H2 | BB_B7 | BB_H7
-        self.advisors = BB_D0 | BB_F0 | BB_D9 | BB_F9
-        self.kings = BB_E0 | BB_E9
+        self.pawns = BB_RED_PAWNS | BB_BLACK_PAWNS  # 卒/兵
+        self.knights = BB_B0 | BB_H0 | BB_B9 | BB_H9  # 马
+        self.bishops = BB_C0 | BB_G0 | BB_C9 | BB_G9  # 象/相
+        self.rooks = BB_A0 | BB_I0 | BB_A9 | BB_I9  # 车
+        self.cannons = BB_B2 | BB_H2 | BB_B7 | BB_H7  # 炮
+        self.advisors = BB_D0 | BB_F0 | BB_D9 | BB_F9  # 士/仕
+        self.kings = BB_E0 | BB_E9  # 将/帅
 
         self.occupied_co[RED] = BB_RANK_0 | BB_B2 | BB_H2 | BB_RED_PAWNS
         self.occupied_co[BLACK] = BB_RANK_9 | BB_B7 | BB_H7 | BB_BLACK_PAWNS
@@ -691,7 +682,7 @@ class BaseBoard:
                     builder.append(str(empty))
                     empty = 0
 
-                if square != I0:
+                if square != I0:  # 如果没有遍历到最后一个棋盘格子
                     builder.append("/")
 
         return "".join(builder)
@@ -779,17 +770,19 @@ class BaseBoard:
 
         return bb & self.occupied_co[color]
 
+    # 将square映射为棋子对象
     def piece_at(self, square: Square) -> Optional[Piece]:
-        piece_type = self.piece_type_at(square)
+        piece_type = self.piece_type_at(square)  # 确定当前square上的棋子是什么
         if piece_type:
-            mask = BB_SQUARES[square]
-            color = bool(self.occupied_co[RED] & mask)
-            return Piece(piece_type, color)
+            mask = BB_SQUARES[square]  # SQUARES上的位置转换为BB_SQUARES上的位置
+            color = bool(self.occupied_co[RED] & mask)  # 确定红方还是黑方
+            return Piece(piece_type, color)  # 返回一个棋子实例对象
         else:
             return None
 
+    # 确定当前square上的棋子是什么
     def piece_type_at(self, square: Square) -> Optional[PieceType]:
-        mask = BB_SQUARES[square]
+        mask = BB_SQUARES[square]  # SQUARES上的位置转换为BB_SQUARES上的位置
 
         if not self.occupied & mask:
             return None
@@ -854,13 +847,13 @@ class BaseBoard:
         rook_attacks = (BB_FILE_ATTACKS[square][BB_FILE_MASKS[square] & occupied] |
                         BB_RANK_ATTACKS[square][BB_RANK_MASKS[square] & occupied])
         attackers = (
-            (cannon_attacks & self.cannons) |
-            (rook_attacks & self.rooks) |
-            (BB_KNIGHT_REVERSED_ATTACKS[square][occupied & BB_KNIGHT_REVERSED_MASKS[square]] & self.knights) |
-            (BB_BISHOP_ATTACKS[square][occupied & BB_BISHOP_MASKS[square]] & self.bishops) |
-            (BB_PAWN_REVERSED_ATTACKS[color][square] & self.pawns) |
-            (BB_ADVISOR_ATTACKS[square] & self.advisors) |
-            ((BB_KING_ATTACKS[square] | (rook_attacks & self.kings)) & self.kings)
+                (cannon_attacks & self.cannons) |
+                (rook_attacks & self.rooks) |
+                (BB_KNIGHT_REVERSED_ATTACKS[square][occupied & BB_KNIGHT_REVERSED_MASKS[square]] & self.knights) |
+                (BB_BISHOP_ATTACKS[square][occupied & BB_BISHOP_MASKS[square]] & self.bishops) |
+                (BB_PAWN_REVERSED_ATTACKS[color][square] & self.pawns) |
+                (BB_ADVISOR_ATTACKS[square] & self.advisors) |
+                ((BB_KING_ATTACKS[square] | (rook_attacks & self.kings)) & self.kings)
         )
         return attackers & self.occupied_co[color]
 
@@ -940,14 +933,11 @@ class BaseBoard:
 
 
 class Board(BaseBoard):
-
     turn: Color
-
     fullmove_number: int
-
     move_stack: List[Move]
 
-    def __init__(self: Board, fen: Optional[str] = STARTING_FEN) -> None:
+    def __init__(self: Board, fen: Optional[str] = STARTING_FEN):
         BaseBoard.__init__(self, None)
         self.move_stack = []
         self._stack: List[_BoardState[Board]] = []

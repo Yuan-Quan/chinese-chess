@@ -328,7 +328,7 @@ class Searcher:
                     best = val
                     if val > beta:
                         mvBest = move
-                        break;
+                        break
                     if val > alpha:
                         alpha = val
                         mvBest = move
