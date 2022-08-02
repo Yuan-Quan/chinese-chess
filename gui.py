@@ -303,7 +303,6 @@ class Application(tk.Frame):
         self.save_pgn(self.board.chinese_move(move, full_width=True))
         self.board.push(move)
         self.move_count += 1
-        self.board.push(move)
         self.select_square = None
         self.update_canvas()
         if self.board.is_checkmate():
