@@ -16,26 +16,38 @@ PieceType = int
 PIECE_TYPES = [PAWN, CANNON, ROOK, KNIGHT, BISHOP, ADVISOR, KING] = range(1, 8)
 PIECE_SYMBOLS = [None, "p", "c", "r", "n", "b", "a", "k"]
 PIECES_NAMES = {
-    "R": "车", "r": "俥",
-    "N": "马", "n": "傌",
+    #    "R": "车", "r": "俥",
+    #    "N": "马", "n": "傌",
+    #    "B": "相", "b": "象",
+    #    "A": "仕", "a": "士",
+    #    "K": "帅", "k": "将",
+    #    "P": "兵", "p": "卒",
+    #    "C": "炮", "c": "砲",
+
+    "R": "车", "r": "车",
+    "N": "马", "n": "马",
     "B": "相", "b": "象",
     "A": "仕", "a": "士",
     "K": "帅", "k": "将",
     "P": "兵", "p": "卒",
-    "C": "炮", "c": "砲",
+    "C": "炮", "c": "炮",
+
 }
 
 ACTION_NAMES = {".": "平", "+": "进", "-": "退"}
-POSITION_NAMES = {".": "中", "+": "前", "-": "后", "a": "一", "b": "二", "c": "三", "d": "四", "e": "五"}
+POSITION_NAMES = {".": "中", "+": "前", "-": "后",
+                  "a": "一", "b": "二", "c": "三", "d": "四", "e": "五"}
 
 
 def piece_symbol(piece_type: PieceType) -> str:
     return typing.cast(str, PIECE_SYMBOLS[piece_type])
 
 
-FILE_NAMES = [None, None, None, "a", "b", "c", "d", "e", "f", "g", "h", "i", None, None, None, None]
+FILE_NAMES = [None, None, None, "a", "b", "c", "d",
+              "e", "f", "g", "h", "i", None, None, None, None]
 CHINESE_NUMBERS = [None, "一", "二", "三", "四", "五", "六", "七", "八", "九"]
-RANK_NAMES = [None, None, None, "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", None, None, None]
+RANK_NAMES = [None, None, None, "0", "1", "2", "3",
+              "4", "5", "6", "7", "8", "9", None, None, None]
 
 STARTING_FEN = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1"
 STARTING_BOARD_FEN = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR"
@@ -285,7 +297,8 @@ def _attack_table(deltas: List[int], jump=False) -> Tuple[List[Bitboard], List[D
         if not jump:
             mask &= ~_edges(square)
         for subset in _carry_rippler(mask):
-            attacks[subset] = _jump_attacks(square, subset, deltas) if jump else _sliding_attacks(square, subset, deltas)
+            attacks[subset] = _jump_attacks(
+                square, subset, deltas) if jump else _sliding_attacks(square, subset, deltas)
 
         attack_table.append(attacks)
         mask_table.append(mask)
@@ -320,7 +333,8 @@ def _pawn_attacks(reverse=False) -> List[List[Bitboard]]:
 def _knight_attacks(reverse=False) -> Tuple[List[Bitboard], List[Dict[Bitboard, Bitboard]]]:
     mask_table = []
     attack_table = []
-    knight_deltas = [33, 31, -14, 18, -33, -31, -18, 14] if not reverse else [14, 31, 33, 18, -14, -31, -18, -33]
+    knight_deltas = [33, 31, -14, 18, -33, -31, -18,
+                     14] if not reverse else [14, 31, 33, 18, -14, -31, -18, -33]
     directions = [16, 1, -16, -1] if not reverse else [15, 17, -15, -17]
     for square in SQUARES:
         if not square_in_board(square):
@@ -396,7 +410,8 @@ def _advisor_attacks() -> List[Bitboard]:
         if not (BB_SQUARES[square] & BB_SQUARES_ADVISOR):
             attacks.append(BB_EMPTY)
             continue
-        attacks.append(_step_attacks(square, [15, 17, -15, -17]) & BB_IN_PALACE)
+        attacks.append(_step_attacks(
+            square, [15, 17, -15, -17]) & BB_IN_PALACE)
     return attacks
 
 
@@ -446,10 +461,13 @@ try:
 
 except:
     BB_KNIGHT_MASKS, BB_KNIGHT_ATTACKS = _knight_attacks()
-    BB_KNIGHT_REVERSED_MASKS, BB_KNIGHT_REVERSED_ATTACKS = _knight_attacks(reverse=True)
+    BB_KNIGHT_REVERSED_MASKS, BB_KNIGHT_REVERSED_ATTACKS = _knight_attacks(
+        reverse=True)
     BB_BISHOP_MASKS, BB_BISHOP_ATTACKS = _bishop_attacks()
-    BB_CANNON_RANK_MASKS, BB_CANNON_RANK_ATTACKS = _attack_table([-1, 1], jump=True)
-    BB_CANNON_FILE_MASKS, BB_CANNON_FILE_ATTACKS = _attack_table([-16, 16], jump=True)
+    BB_CANNON_RANK_MASKS, BB_CANNON_RANK_ATTACKS = _attack_table(
+        [-1, 1], jump=True)
+    BB_CANNON_FILE_MASKS, BB_CANNON_FILE_ATTACKS = _attack_table(
+        [-16, 16], jump=True)
     BB_RANK_MASKS, BB_RANK_ATTACKS = _attack_table([-1, 1])
     BB_FILE_MASKS, BB_FILE_ATTACKS = _attack_table([-16, 16])
     BB_PAWN_ATTACKS = _pawn_attacks()
@@ -528,7 +546,8 @@ class Move:
             to_square = SQUARE_NAMES.index(iccs[2:])
             return cls(from_square, to_square)
         else:
-            raise ValueError(f"expected iccs string to be of length 4: {iccs!r}")
+            raise ValueError(
+                f"expected iccs string to be of length 4: {iccs!r}")
 
     @classmethod
     def null(cls) -> Move:
@@ -619,11 +638,13 @@ class BaseBoard:
     def _set_board_fen(self, fen: str) -> None:
         fen = fen.strip()
         if " " in fen:
-            raise ValueError(f"expected position part of fen, got multiple parts: {fen!r}")
+            raise ValueError(
+                f"expected position part of fen, got multiple parts: {fen!r}")
 
         rows = fen.split("/")
         if len(rows) != 10:
-            raise ValueError(f"expected 9 rows in position part of fen: {fen!r}")
+            raise ValueError(
+                f"expected 9 rows in position part of fen: {fen!r}")
 
         for row in rows:
             field_sum = 0
@@ -632,17 +653,20 @@ class BaseBoard:
             for c in row:
                 if c in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
                     if previous_was_digit:
-                        raise ValueError(f"two subsequent digits in position part of fen: {fen!r}")
+                        raise ValueError(
+                            f"two subsequent digits in position part of fen: {fen!r}")
                     field_sum += int(c)
                     previous_was_digit = True
                 elif c.lower() in PIECE_SYMBOLS:
                     field_sum += 1
                     previous_was_digit = False
                 else:
-                    raise ValueError(f"invalid character in position part of fen: {fen!r}")
+                    raise ValueError(
+                        f"invalid character in position part of fen: {fen!r}")
 
             if field_sum != 9:
-                raise ValueError(f"expected 9 columns per row in position part of fen: {fen!r}")
+                raise ValueError(
+                    f"expected 9 columns per row in position part of fen: {fen!r}")
 
         self._clear_board()
         square_index = A0
@@ -651,7 +675,8 @@ class BaseBoard:
                 square_index += int(c)
             elif c.lower() in PIECE_SYMBOLS:
                 piece = Piece.from_symbol(c)
-                self._set_piece_at(SQUARES_180[square_index], piece.piece_type, piece.color)
+                self._set_piece_at(
+                    SQUARES_180[square_index], piece.piece_type, piece.color)
                 square_index += 1
             else:
                 square_index += 7
@@ -847,13 +872,14 @@ class BaseBoard:
         rook_attacks = (BB_FILE_ATTACKS[square][BB_FILE_MASKS[square] & occupied] |
                         BB_RANK_ATTACKS[square][BB_RANK_MASKS[square] & occupied])
         attackers = (
-                (cannon_attacks & self.cannons) |
-                (rook_attacks & self.rooks) |
-                (BB_KNIGHT_REVERSED_ATTACKS[square][occupied & BB_KNIGHT_REVERSED_MASKS[square]] & self.knights) |
-                (BB_BISHOP_ATTACKS[square][occupied & BB_BISHOP_MASKS[square]] & self.bishops) |
-                (BB_PAWN_REVERSED_ATTACKS[color][square] & self.pawns) |
-                (BB_ADVISOR_ATTACKS[square] & self.advisors) |
-                ((BB_KING_ATTACKS[square] | (rook_attacks & self.kings)) & self.kings)
+            (cannon_attacks & self.cannons) |
+            (rook_attacks & self.rooks) |
+            (BB_KNIGHT_REVERSED_ATTACKS[square][occupied & BB_KNIGHT_REVERSED_MASKS[square]] & self.knights) |
+            (BB_BISHOP_ATTACKS[square][occupied & BB_BISHOP_MASKS[square]] & self.bishops) |
+            (BB_PAWN_REVERSED_ATTACKS[color][square] & self.pawns) |
+            (BB_ADVISOR_ATTACKS[square] & self.advisors) |
+            ((BB_KING_ATTACKS[square] |
+              (rook_attacks & self.kings)) & self.kings)
         )
         return attackers & self.occupied_co[color]
 
@@ -985,7 +1011,8 @@ class Board(BaseBoard):
             elif turn_part == "b":
                 turn = BLACK
             else:
-                raise ValueError(f"expected 'w' or 'b' for turn part of fen: {fen!r}")
+                raise ValueError(
+                    f"expected 'w' or 'b' for turn part of fen: {fen!r}")
 
         parts.pop(0)
         parts.pop(0)
@@ -1002,12 +1029,14 @@ class Board(BaseBoard):
                 raise ValueError(f"invalid fullmove number in fen: {fen!r}")
 
             if fullmove_number < 0:
-                raise ValueError(f"fullmove number cannot be negative: {fen!r}")
+                raise ValueError(
+                    f"fullmove number cannot be negative: {fen!r}")
 
             fullmove_number = max(fullmove_number, 1)
 
         if parts:
-            raise ValueError(f"fen string has more parts than expected: {fen!r}")
+            raise ValueError(
+                f"fen string has more parts than expected: {fen!r}")
 
         self._set_board_fen(board_part)
         self.turn = turn
@@ -1082,9 +1111,11 @@ class Board(BaseBoard):
         return not self._is_safe(king, self._slider_blockers(king), self._knight_blockers(king), move)
 
     def _slider_blockers(self, king: Square) -> List[Tuple[Bitboard, Bitboard, int]]:
-        rays = (BB_FILE_ATTACKS[king][BB_EMPTY] | BB_RANK_ATTACKS[king][BB_EMPTY])
+        rays = (BB_FILE_ATTACKS[king][BB_EMPTY] |
+                BB_RANK_ATTACKS[king][BB_EMPTY])
         cannons = rays & self.cannons & self.occupied_co[not self.turn]
-        rooks_and_kings = rays & (self.kings | self.rooks) & self.occupied_co[not self.turn]
+        rooks_and_kings = rays & (
+            self.kings | self.rooks) & self.occupied_co[not self.turn]
 
         blockers = []
 
@@ -1296,7 +1327,8 @@ class Board(BaseBoard):
 
         # 兵卒
         elif (piece == PAWN):
-            other = self.pieces_mask(piece, self.turn) & BB_FILES[from_square_file] & ~BB_SQUARES[from_square]
+            other = self.pieces_mask(
+                piece, self.turn) & BB_FILES[from_square_file] & ~BB_SQUARES[from_square]
             if not other:
                 result += PIECE_SYMBOLS[piece] + str(from_file_wxf)
             else:
@@ -1308,32 +1340,40 @@ class Board(BaseBoard):
                     if len(file_pawns) > 1:
                         pawns += file_pawns
                 if len(pawns) == 2:
-                    result = PIECE_SYMBOLS[piece] + [plus_symbol, minus_symbol][pawns.index(from_square)]
+                    result = PIECE_SYMBOLS[piece] + [plus_symbol,
+                                                     minus_symbol][pawns.index(from_square)]
                 elif len(pawns) == 3:
-                    result = PIECE_SYMBOLS[piece] + [plus_symbol, ".", minus_symbol][pawns.index(from_square)]
+                    result = PIECE_SYMBOLS[piece] + [plus_symbol,
+                                                     ".", minus_symbol][pawns.index(from_square)]
                 else:
                     if self.turn == RED:
-                        result = PIECE_SYMBOLS[piece] + chars[pawns.index(from_square)]
+                        result = PIECE_SYMBOLS[piece] + \
+                            chars[pawns.index(from_square)]
                     else:
-                        result = PIECE_SYMBOLS[piece] + chars[pawns[::-1].index(from_square)]
+                        result = PIECE_SYMBOLS[piece] + \
+                            chars[pawns[::-1].index(from_square)]
 
         # 车马帅将炮
         else:
-            other = self.pieces_mask(piece, self.turn) & BB_FILES[from_square_file] & ~BB_SQUARES[from_square]
+            other = self.pieces_mask(
+                piece, self.turn) & BB_FILES[from_square_file] & ~BB_SQUARES[from_square]
             if other:
-                result += PIECE_SYMBOLS[piece] + (plus_symbol if msb(other) < from_square else minus_symbol)
+                result += PIECE_SYMBOLS[piece] + \
+                    (plus_symbol if msb(other) < from_square else minus_symbol)
             else:
                 result += PIECE_SYMBOLS[piece] + str(from_file_wxf)
 
         # 马相象仕士
         if piece == KNIGHT or piece == BISHOP or piece == ADVISOR:
-            result += (plus_symbol if from_square < to_square else minus_symbol) + str(to_file_wxf)
+            result += (plus_symbol if from_square <
+                       to_square else minus_symbol) + str(to_file_wxf)
 
         # 车帅将炮兵卒
         else:
             offset = count_ones(between(from_square, to_square)) + 1
             if abs(from_square - to_square) > 15:
-                result += (minus_symbol if from_square > to_square else plus_symbol) + str(offset)
+                result += (minus_symbol if from_square >
+                           to_square else plus_symbol) + str(offset)
             else:
                 result += "." + str(to_file_wxf)
 

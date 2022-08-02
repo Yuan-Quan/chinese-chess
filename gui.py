@@ -151,7 +151,7 @@ class Application(tk.Frame):
             f.write("[RedElo \"{}\"]\n".format(self.config['pgn_red_elo']))
             f.write("[Black \"{}\"]\n".format(self.config['pgn_black_name']))
             f.write("[BlackElo \"{}\"]\n".format(self.config['pgn_black_elo']))
-            f.write("[Result \"{}\"]\n".format("-:-"))
+            f.write("[Result \"{}\"]\n".format("0:1"))
             f.write("[ECCO \"{}\"]\n".format(self.config['pgn_ecco']))
             f.write("[Opening \"{}\"]\n".format(self.config['pgn_opening']))
             f.write("[Variation \"{}\"]\n".format(
@@ -163,13 +163,13 @@ class Application(tk.Frame):
         else:
             if self.pgn_br_count < 1:
                 f = open(self.pgn_file_name, "a")
-                f.write("{:.0f}. {}, ".format(
+                f.write("{:.0f}.  {}    ".format(
                     self.move_count / 2 + 1, move_str))
                 f.close()
                 self.pgn_br_count += 1
             else:
                 f = open(self.pgn_file_name, "a")
-                f.write("{}\n".format(move_str))
+                f.write("{} \n".format(move_str))
                 f.close()
                 self.pgn_br_count = 0
 
