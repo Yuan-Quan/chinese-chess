@@ -1,8 +1,13 @@
+from searcher.tools import parseFEN, search, global_var
+from searcher.elephantfish import Searcher
 import sys
 import threading
 import tkinter as tk
+import os
+import yaml
 from os import getenv
 from os.path import abspath
+from datetime import datetime
 from tkinter import messagebox
 from typing import Callable, Dict
 
@@ -15,10 +20,6 @@ SELF_PLAY, COMPUTER_PLAY = 1, 2
 THINK_TIME = int(getenv("THINK_TIME")) if getenv("THINK_TIME") else 1
 
 sys.path.append(abspath(''))
-
-from searcher.elephantfish import Searcher
-
-from searcher.tools import parseFEN, search, global_var
 
 
 class ThinkThread(threading.Thread):
@@ -98,6 +99,8 @@ class Application(tk.Frame):
     style = {"start_x": 15, "start_y": 45, "space_x": 60, "space_y": 60}
     rotate = False
     mode = COMPUTER_PLAY
+    move_count = 0
+    pgn_br_count = 0
     # mode = SELF_PLAY
     resources: Dict[str, PhotoImage] = {}  # 冒号后为类型注解
 
@@ -113,7 +116,9 @@ class Application(tk.Frame):
         self.master = tk.Tk()  # 创建窗口
         super().__init__(self.master)  # 调用父类的 __init__ 方法
         self.load_resources()  # 加载图片
-        self.master.title("中国象棋")
+        self.load_config()
+        self.save_pgn()
+        self.master.title(self.config['window_title'])
         self.master.resizable(False, False)  # 设置tkinter窗口大小不可拖拽调整
         self.pack()  # 规定布局，此处默认顶部对齐
         self.create_widgets()
@@ -121,20 +126,70 @@ class Application(tk.Frame):
         if self.mode == COMPUTER_PLAY:
             self.computer_side = tk.BooleanVar(self)
 
+    def load_config(self) -> None:
+        with open("config.yaml", "r") as stream:
+            try:
+                self.config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+
+    def save_pgn(self, move_str=""):
+        if move_str == "":
+            # new file
+            self.pgn_file_name = "./CC-{} vs {}-_手胜.pgn".format(
+                self.config['pgn_red_name'],
+                self.config['pgn_black_name'])
+            f = open(self.pgn_file_name, "w")
+            f.write("[Game \"{}\"]\n".format(self.config['pgn_game']))
+            f.write("[Event \"{}\"]\n".format(self.config['pgn_event']))
+            f.write("[Site \"{}\"]\n".format(self.config['pgn_site']))
+            now = datetime.now()
+            date_time_str = now.strftime("%Y.%m.%d")
+            f.write("[Date \"{}\"]\n".format(date_time_str))
+            f.write("[Round \"{}\"]\n".format(self.config['pgn_round']))
+            f.write("[Red \"{}\"]\n".format(self.config['pgn_red_name']))
+            f.write("[RedElo \"{}\"]\n".format(self.config['pgn_red_elo']))
+            f.write("[Black \"{}\"]\n".format(self.config['pgn_black_name']))
+            f.write("[BlackElo \"{}\"]\n".format(self.config['pgn_black_elo']))
+            f.write("[Result \"{}\"]\n".format("-:-"))
+            f.write("[ECCO \"{}\"]\n".format(self.config['pgn_ecco']))
+            f.write("[Opening \"{}\"]\n".format(self.config['pgn_opening']))
+            f.write("[Variation \"{}\"]\n".format(
+                self.config['pgn_variation']))
+            f.write("[FEN \"{}\"]\n".format(self.config['pgn_fen']))
+            f.write("\n")
+            f.close()
+            return
+        else:
+            if self.pgn_br_count < 1:
+                f = open(self.pgn_file_name, "a")
+                f.write("{:.0f}. {}, ".format(
+                    self.move_count / 2 + 1, move_str))
+                f.close()
+                self.pgn_br_count += 1
+            else:
+                f = open(self.pgn_file_name, "a")
+                f.write("{}\n".format(move_str))
+                f.close()
+                self.pgn_br_count = 0
+
     # 加载图片
     def load_resources(self):
         # self.resources = {}
         self.resources["bg"] = PhotoImage.open("assets/board.png")
         self.resources["bg_r"] = PhotoImage.open("assets/board_rotate.png")
-        all_pieces = ["R", "N", "B", "A", "K", "C", "P", "r", "n", "b", "a", "k", "c", "p", "red_box", "blue_box"]
+        all_pieces = ["R", "N", "B", "A", "K", "C", "P", "r",
+                      "n", "b", "a", "k", "c", "p", "red_box", "blue_box"]
         for offset, piece in enumerate(all_pieces):
-            self.resources[piece] = PhotoImage.open_and_crop("./assets/pieces.png", 0, offset * 60, 60, 60)
+            self.resources[piece] = PhotoImage.open_and_crop(
+                "./assets/pieces.png", 0, offset * 60, 60, 60)
         self.resources["check"] = PhotoImage.open("assets/check.png")
         self.resources["checkmate"] = PhotoImage.open("assets/checkmate.png")
 
     # 创建交互窗口
     def create_widgets(self):
-        self.canvas = tk.Canvas(self, bg="white", height=690, width=570, highlightthickness=0)
+        self.canvas = tk.Canvas(
+            self, bg="white", height=690, width=570, highlightthickness=0)
         # 将handle_click函数绑定到画布上 # "<B1-Motion>"是鼠标左键点击移动事件，"<Button-1>"是左键单击事件
         self.canvas.bind("<Button-1>", self.handle_click)
         # 将响应函数与对应按钮绑定
@@ -158,12 +213,15 @@ class Application(tk.Frame):
 
         label = tk.Label(self.options_frame, text="电脑")
         label.grid(row=0, column=0)
-        red_button = tk.Radiobutton(self.options_frame, text="红", variable=self.computer_side, value=chess.RED)
+        red_button = tk.Radiobutton(
+            self.options_frame, text="红", variable=self.computer_side, value=chess.RED)
         red_button.grid(row=0, column=1)
-        black_button = tk.Radiobutton(self.options_frame, text="黑", variable=self.computer_side, value=chess.BLACK)
+        black_button = tk.Radiobutton(
+            self.options_frame, text="黑", variable=self.computer_side, value=chess.BLACK)
         black_button.select()
         black_button.grid(row=0, column=2)
-        start_button = tk.Button(self.options_frame, text="开始挑战", command=self.start_game)
+        start_button = tk.Button(
+            self.options_frame, text="开始挑战", command=self.start_game)
         start_button.grid(row=1, column=0, columnspan=3)
         self.options_frame.update()
 
@@ -238,6 +296,13 @@ class Application(tk.Frame):
 
     def push(self, move: chess.Move):
         # print(self.board.chinese_move(move, full_width=True))  # 打印棋谱
+        if self.board.turn == chess.RED:
+            print("红方: " + self.board.chinese_move(move, full_width=True))
+        else:
+            print("黑方: " + self.board.chinese_move(move, full_width=True))
+        self.save_pgn(self.board.chinese_move(move, full_width=True))
+        self.board.push(move)
+        self.move_count += 1
         self.board.push(move)
         self.select_square = None
         self.update_canvas()
@@ -245,7 +310,8 @@ class Application(tk.Frame):
             self.update_canvas()
         elif self.board.is_check():
             self.update_canvas()
-            check_image = self.canvas.create_image(0, 30, image=self.resources["check"], anchor="nw")
+            check_image = self.canvas.create_image(
+                0, 30, image=self.resources["check"], anchor="nw")
 
             def delete_check_image():
                 self.canvas.delete(check_image)
@@ -259,14 +325,15 @@ class Application(tk.Frame):
         if self.rotate:
             square = self.rotate_square(square)
         x = (
-                self.style["start_x"]
-                + (chess.square_file(chess.SQUARES_180[square]) - 3) * self.style["space_x"]
+            self.style["start_x"]
+            + (chess.square_file(chess.SQUARES_180[square]) - 3) * self.style["space_x"]
         )
         y = (
-                self.style["start_y"]
-                + (chess.square_rank(chess.SQUARES_180[square]) - 3) * self.style["space_y"]
+            self.style["start_y"]
+            + (chess.square_rank(chess.SQUARES_180[square]) - 3) * self.style["space_y"]
         )
-        self.canvas.create_image(x, y, image=self.resources[piece.symbol()], anchor="nw")
+        self.canvas.create_image(
+            x, y, image=self.resources[piece.symbol()], anchor="nw")
 
     def create_box(self, square: chess.Square, color="blue"):
         box = "blue_box" if color == "blue" else "red_box"
@@ -291,9 +358,11 @@ class Application(tk.Frame):
     def update_canvas(self):
         self.canvas.delete("all")
         if self.rotate:
-            self.canvas.create_image(0, 0, image=self.resources["bg_r"], anchor="nw")
+            self.canvas.create_image(
+                0, 0, image=self.resources["bg_r"], anchor="nw")
         else:
-            self.canvas.create_image(0, 0, image=self.resources["bg"], anchor="nw")
+            self.canvas.create_image(
+                0, 0, image=self.resources["bg"], anchor="nw")
         for square in chess.SQUARES_IN_BOARD:
             piece = self.board.piece_at(square)
             if piece:
@@ -310,7 +379,8 @@ class Application(tk.Frame):
             self.create_box(last_move.to_square)
 
         if self.board.is_checkmate():
-            self.canvas.create_image(0, 30, image=self.resources["checkmate"], anchor="nw")
+            self.canvas.create_image(
+                0, 30, image=self.resources["checkmate"], anchor="nw")
 
 
 if __name__ == "__main__":
