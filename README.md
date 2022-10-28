@@ -14,3 +14,7 @@ python gui.py
 ![1](./media/1.png)
 
 ![1](./media/2.png)
+
+```python
+for i in range(54):
+```
